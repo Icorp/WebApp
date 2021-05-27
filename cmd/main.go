@@ -23,6 +23,7 @@ func main() {
 	http.Handle("/assets/", http.StripPrefix("/assets/", http.FileServer(http.Dir("./assets/"))))
 	http.HandleFunc("/", indexHandler)
 	http.HandleFunc("/book", bookHandler)
+	http.HandleFunc("/newbook", sendData)
 	http.ListenAndServe(":8080", nil)
 }
 
@@ -74,4 +75,39 @@ func getData() []models.Post {
 		panic(err)
 	}
 	return posts
+}
+
+func sendData(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case "GET":
+		t, err := template.ParseFiles("../templates/addpost.html", "../templates/header.html", "../templates/footer.html")
+		if err != nil {
+			fmt.Fprintf(w, err.Error())
+			return
+		}
+		t.ExecuteTemplate(w, "index", nil)
+	case "POST":
+		client, err := mongo.NewClient(options.Client().ApplyURI("mongodb://localhost:27017/"))
+		if err != nil {
+			log.Fatal(err)
+		}
+		ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
+		err = client.Connect(ctx)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer client.Disconnect(ctx)
+		err = client.Ping(ctx, readpref.Primary())
+		if err != nil {
+			log.Fatal(err)
+		}
+		collection := client.Database("blog").Collection("posts")
+		r.ParseForm()
+		post := models.Post{Title: r.FormValue("title"), Body: r.FormValue("body")}
+		insertResult, err := collection.InsertOne(ctx, post)
+		if err != nil {
+			panic(err)
+		}
+		fmt.Println(insertResult.InsertedID)
+	}
 }
