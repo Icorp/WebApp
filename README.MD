@@ -16,7 +16,7 @@ Task:
 
 1) CRUD
 
-- Create post.
-- Read post.
-- Update post.
-- Delete post.
+- Create post.✅
+- Read post.✅
+- Update post.❓
+- Delete post.❓
