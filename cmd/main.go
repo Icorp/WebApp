@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/Icorp/petProject/models"
+	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -16,25 +17,27 @@ import (
 )
 
 var posts map[string]*models.Post
+var templates *template.Template
 
 func main() {
-	posts = make(map[string]*models.Post, 0)
-	fmt.Println("Start Application ...")
-	http.Handle("/assets/", http.StripPrefix("/assets/", http.FileServer(http.Dir("./assets/"))))
-	http.HandleFunc("/", indexHandler)
-	http.HandleFunc("/book", bookHandler)
-	http.HandleFunc("/newbook", sendData)
-	http.ListenAndServe(":8080", nil)
-}
+	router := gin.Default()
+	router.LoadHTMLGlob("../web/templates/*")
 
+	// Read static files from web/assets
+	readStaticFiles(router)
+	router.GET("/", func(c *gin.Context) {
+		c.HTML(http.StatusOK, "index.html", gin.H{})
+	})
+	router.Run(":8080")
+}
+func readStaticFiles(router *gin.Engine) {
+	router.Static("/css/", "../web/assets/css")
+	router.Static("/js/", "../web/assets/js")
+	router.Static("/images/", "../web/assets/images")
+}
 func indexHandler(w http.ResponseWriter, r *http.Request) {
-	t, err := template.ParseFiles("../templates/index.html", "../templates/header.html", "../templates/footer.html")
-	if err != nil {
-		fmt.Fprintf(w, err.Error())
-		return
-	}
 	data := getData()
-	t.ExecuteTemplate(w, "index", data)
+	templates.ExecuteTemplate(w, "index", data)
 }
 
 func bookHandler(w http.ResponseWriter, r *http.Request) {
