@@ -16,7 +16,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 )
 
-var templates *template.Template
 var posts map[string]*models.Post
 
 func main() {
